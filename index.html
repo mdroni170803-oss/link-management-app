@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BIOM Link Manager</title>
+    <!-- Google Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+            --appbar-bg: #2c3e50;
+            --appbar-text: #ffffff;
+            --card-bg: #ffffff;
+            --accent-color: #3498db;
+            --danger-color: #e74c3c;
+            --transition: 0.3s ease;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #f1f1f1;
+            --appbar-bg: #000000;
+            --appbar-text: #ffffff;
+            --card-bg: #2d2d2d;
+            --accent-color: #1abc9c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: var(--transition);
+            overflow-x: hidden;
+        }
+
+        /* AppBar */
+        .appbar {
+            background-color: var(--appbar-bg);
+            color: var(--appbar-text);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .appbar-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+
+        .appbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-left: auto;
+        }
+
+        .icon-btn {
+            cursor: pointer;
+            font-size: 24px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            right: -300px;
+            top: 0;
+            width: 280px;
+            height: 100%;
+            background-color: var(--card-bg);
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+            z-index: 200;
+            padding: 30px 20px;
+            transition: var(--transition);
+        }
+
+        .sidebar.active {
+            right: 0;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 150;
+        }
+
+        /* Search & Add Section */
+        .search-container {
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-bar {
+            flex: 1;
+            padding: 10px 15px;
+            border-radius: 25px;
+            border: 1px solid #ccc;
+            outline: none;
+            background: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        .add-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* List Styling */
+        .scroll-view {
+            height: calc(100vh - 140px);
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .list-item {
+            background: var(--card-bg);
+            margin-bottom: 12px;
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Form Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 15px;
+            z-index: 300;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+        }
+
+        .modal input, .modal textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            background: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .modal button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: var(--accent-color);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Page Management */
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* Link Detail Item */
+        .link-card {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .link-header {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .link-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 5px 0;
+            text-align: center;
+        }
+
+        .link-actions {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+
+        .btn-text {
+            color: var(--accent-color);
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .count-tag {
+            text-align: center;
+            padding: 5px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .back-btn {
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="overlay" id="overlay"></div>
+
+    <!-- AppBar -->
+    <div class="appbar">
+        <span class="material-icons back-btn" id="backBtn" style="display: none;">arrow_back</span>
+        <div class="appbar-title">BIOM Link Manager App</div>
+        <div class="appbar-actions">
+            <span class="material-icons icon-btn" id="themeToggle">contrast</span>
+            <span class="material-icons icon-btn" id="menuBtn">more_vert</span>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <h3 style="margin-bottom: 20px;">Info</h3>
+        <p><strong>App for link management</strong></p>
+        <p style="margin-top: 10px; font-size: 0.9rem;">App by Muhammad Roni Biswas (20th bach)</p>
+        <p style="color: var(--accent-color); font-size: 0.9rem;">Messenger @mdroni1702</p>
+        <button onclick="toggleSidebar()" style="margin-top: 30px; padding: 8px 15px;">Close</button>
+    </div>
+
+    <!-- Page 1: Link Types -->
+    <div id="page1" class="page active">
+        <div class="search-container">
+            <input type="text" class="search-bar" id="searchType" placeholder="Search link type...">
+            <button class="add-btn" onclick="openModal('typeModal')"><span class="material-icons">add</span></button>
+        </div>
+        <div class="scroll-view" id="typeList">
+            <!-- List items will be injected here -->
+        </div>
+    </div>
+
+    <!-- Page 2: Links inside a Type -->
+    <div id="page2" class="page">
+        <div class="search-container">
+            <input type="text" class="search-bar" id="searchLink" placeholder="Search links...">
+            <button class="add-btn" onclick="openModal('linkModal')"><span class="material-icons">add</span></button>
+        </div>
+        <div class="count-tag" id="linkCount">Total Links: 0</div>
+        <div class="scroll-view" id="linksList">
+            <!-- Link items will be injected here -->
+        </div>
+    </div>
+
+    <!-- Page 3: Description View -->
+    <div id="page3" class="page">
+        <div style="padding: 20px; text-align: center;">
+            <h2 id="descTitle"></h2>
+            <hr style="margin: 15px 0;">
+            <p id="descContent" style="white-space: pre-wrap;"></p>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="typeModal" class="modal">
+        <h3>Add New Link Type</h3>
+        <input type="text" id="newTypeName" placeholder="Link Type (e.g. Social)">
+        <textarea id="newTypeDesc" placeholder="Description" rows="4"></textarea>
+        <button onclick="saveType()">Save</button>
+        <button onclick="closeModals()" style="background: #999; margin-top: 5px;">Cancel</button>
+    </div>
+
+    <div id="linkModal" class="modal">
+        <h3>Add New Link</h3>
+        <input type="text" id="newLinkName" placeholder="Link Name (e.g. My Profile)">
+        <input type="text" id="newLinkUrl" placeholder="Paste Link Here">
+        <button onclick="saveLink()">Save</button>
+        <button onclick="closeModals()" style="background: #999; margin-top: 5px;">Cancel</button>
+    </div>
+
+    <script>
+        // Data Structure
+        let db = JSON.parse(localStorage.getItem('biom_links')) || [];
+        let currentTypeId = null;
+        let isDarkMode = false;
+
+        // Dom Elements
+        const overlay = document.getElementById('overlay');
+        const sidebar = document.getElementById('sidebar');
+
+        // --- Initialization ---
+        renderTypes();
+
+        // --- Theme Toggle ---
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+        });
+
+        // --- Sidebar ---
+        document.getElementById('menuBtn').addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', () => {
+            toggleSidebar();
+            closeModals();
+        });
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('active');
+            overlay.style.display = sidebar.classList.contains('active') ? 'block' : 'none';
+        }
+
+        // --- Modal Logic ---
+        function openModal(id) {
+            document.getElementById(id).style.display = 'block';
+            overlay.style.display = 'block';
+        }
+
+        function closeModals() {
+            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+            overlay.style.display = 'none';
+        }
+
+        // --- Link Type Logic (Page 1) ---
+        function saveType() {
+            const name = document.getElementById('newTypeName').value;
+            const desc = document.getElementById('newTypeDesc').value;
+            if(!name) return alert("Enter Link Type");
+
+            const newType = {
+                id: Date.now(),
+                name: name,
+                description: desc,
+                links: []
+            };
+
+            db.push(newType);
+            updateStorage();
+            renderTypes();
+            closeModals();
+            document.getElementById('newTypeName').value = '';
+            document.getElementById('newTypeDesc').value = '';
+        }
+
+        function renderTypes(filter = '') {
+            const list = document.getElementById('typeList');
+            list.innerHTML = '';
+            
+            db.filter(t => t.name.toLowerCase().includes(filter.toLowerCase())).forEach(type => {
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                item.innerHTML = `
+                    <div style="flex:1; cursor:pointer;" onclick="viewLinks(${type.id})">
+                        <strong>${type.name}</strong>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <span class="material-icons" style="color:var(--accent-color); cursor:pointer;" onclick="showDesc(${type.id})">info</span>
+                        <span class="material-icons" style="color:var(--danger-color); cursor:pointer;" onclick="deleteType(${type.id})">delete</span>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        document.getElementById('searchType').addEventListener('input', (e) => renderTypes(e.target.value));
+
+        function deleteType(id) {
+            if(confirm("Are you sure you want to delete this type permanently?")) {
+                db = db.filter(t => t.id !== id);
+                updateStorage();
+                renderTypes();
+            }
+        }
+
+        // --- Link Logic (Page 2) ---
+        function viewLinks(typeId) {
+            currentTypeId = typeId;
+            showPage('page2');
+            document.getElementById('backBtn').style.display = 'block';
+            renderLinks();
+        }
+
+        function saveLink() {
+            const name = document.getElementById('newLinkName').value;
+            const url = document.getElementById('newLinkUrl').value;
+            if(!name || !url) return alert("Fill all fields");
+
+            const typeIndex = db.findIndex(t => t.id === currentTypeId);
+            const newLink = {
+                id: Date.now(),
+                name: name,
+                url: url,
+                time: new Date().toLocaleString()
+            };
+
+            db[typeIndex].links.push(newLink);
+            updateStorage();
+            renderLinks();
+            closeModals();
+            document.getElementById('newLinkName').value = '';
+            document.getElementById('newLinkUrl').value = '';
+        }
+
+        function renderLinks(filter = '') {
+            const type = db.find(t => t.id === currentTypeId);
+            if(!type) return;
+
+            const list = document.getElementById('linksList');
+            list.innerHTML = '';
+            const filteredLinks = type.links.filter(l => l.name.toLowerCase().includes(filter.toLowerCase()));
+            
+            document.getElementById('linkCount').innerText = `Total Links: ${filteredLinks.length}`;
+
+            filteredLinks.forEach((link, index) => {
+                const item = document.createElement('div');
+                item.className = 'list-item link-card';
+                
+                // Long Press Detection
+                let timer;
+                item.onmousedown = item.ontouchstart = () => {
+                    timer = setTimeout(() => deleteLink(link.id), 2000);
+                };
+                item.onmouseup = item.onmouseleave = item.ontouchend = () => clearTimeout(timer);
+
+                item.innerHTML = `
+                    <div class="link-header">
+                        <span>#${index + 1} | ${link.time}</span>
+                        <span class="btn-text" onclick="copyLink('${link.url}')">Copy Link</span>
+                    </div>
+                    <div class="link-name">${link.name}</div>
+                    <div class="link-actions">
+                        <div class="btn-text" onclick="handleOpenLink('${link.url}')">Open Link</div>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        document.getElementById('searchLink').addEventListener('input', (e) => renderLinks(e.target.value));
+
+        function deleteLink(linkId) {
+            if(confirm("Permanently delete this link?")) {
+                const typeIndex = db.findIndex(t => t.id === currentTypeId);
+                db[typeIndex].links = db[typeIndex].links.filter(l => l.id !== linkId);
+                updateStorage();
+                renderLinks();
+            }
+        }
+
+        function copyLink(url) {
+            navigator.clipboard.writeText(url);
+            alert("Link copied to clipboard!");
+        }
+
+        function handleOpenLink(url) {
+            const lowerUrl = url.toLowerCase();
+            // In a web browser, standard https links will attempt to open the app if installed
+            // This logic covers the redirection requirement.
+            if(lowerUrl.includes('facebook.com')) {
+                window.open(url, '_blank');
+            } else if(lowerUrl.includes('wa.me') || lowerUrl.includes('whatsapp.com')) {
+                window.open(url, '_blank');
+            } else if(lowerUrl.includes('m.me') || lowerUrl.includes('messenger.com')) {
+                window.open(url, '_blank');
+            } else if(lowerUrl.includes('tiktok.com')) {
+                window.open(url, '_blank');
+            } else if(lowerUrl.includes('imo.im')) {
+                window.open(url, '_blank');
+            } else {
+                // Default to Chrome/New Tab
+                window.open(url, '_blank');
+            }
+        }
+
+        // --- Description Page (Page 3) ---
+        function showDesc(id) {
+            const type = db.find(t => t.id === id);
+            document.getElementById('descTitle').innerText = type.name;
+            document.getElementById('descContent').innerText = type.description || "No description provided.";
+            showPage('page3');
+            document.getElementById('backBtn').style.display = 'block';
+        }
+
+        // --- Navigation Control ---
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        document.getElementById('backBtn').addEventListener('click', () => {
+            if(document.getElementById('page2').classList.contains('active') || 
+               document.getElementById('page3').classList.contains('active')) {
+                showPage('page1');
+                document.getElementById('backBtn').style.display = 'none';
+            }
+        });
+
+        // --- Storage Helpers ---
+        function updateStorage() {
+            localStorage.setItem('biom_links', JSON.stringify(db));
+        }
+
+    </script>
+</body>
+</html>
