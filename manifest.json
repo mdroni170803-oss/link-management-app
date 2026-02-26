@@ -3,12 +3,12 @@
   "name": "BIOM Link Manager App",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3064/3064155.png",
+      "src": "icon-512.png",
       "type": "image/png",
       "sizes": "512x512"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/192/3064/3064155.png",
+      "src": "icon-192.png",
       "type": "image/png",
       "sizes": "192x192"
     }
